@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroVision AI | Advanced Tumor Analytics</title>
+    <style>
+        :root {
+            /* Modern Palette */
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --accent-color: #00f2fe;
+            --secondary-color: #4facfe;
+            --success-color: #00c853;
+            --card-bg: rgba(255, 255, 255, 0.92);
+            --text-main: #2d3748;
+            --text-light: #718096;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            color: var(--text-main);
+            min-height: 100vh;
+            /* Animated Deep Space/Aurora Background */
+            background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364, #240b36);
+            background-size: 400% 400%;
+            animation: gradientBG 5s ease infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- Glassmorphism Card --- */
+        .card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 50px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin: 0 0 10px 0;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #fff, #a1c4fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        /* --- Upload Area --- */
+        .upload-area {
+            border: 3px dashed #cbd5e0;
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(247, 250, 252, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+
+        .upload-area:hover .upload-icon {
+            transform: translateY(-5px) scale(1.1);
+        }
+
+        /* --- Buttons --- */
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        /* --- Download Button (Stylish Ghost) --- */
+        .btn-download {
+            background: transparent;
+            color: #764ba2;
+            border: 2px solid #764ba2;
+            width: 100%;
+            margin-top: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+        }
+
+        .btn-download:hover {
+            background: #764ba2;
+            color: #fff;
+            box-shadow: 0 5px 15px rgba(118, 75, 162, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* --- Results Grid --- */
+        .results-grid {
+            display: none;
+            grid-template-columns: 1.2fr 0.8fr;
+            /* More space for image */
+            gap: 40px;
+            margin-top: 40px;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .data-col {
+            padding: 30px;
+            background: #f8fafc;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Image Viewport --- */
+        .img-viewport {
+            width: 100%;
+            height: 500px;
+            /* Taller */
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid #fff;
+        }
+
+        .img-viewport:active {
+            cursor: grabbing;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 100%;
+            transition: transform 0.1s ease-out;
+            pointer-events: none;
+        }
+
+        /* --- Controls --- */
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            background: #f1f5f9;
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        .toggle-btn {
+            background: transparent;
+            color: var(--text-light);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn.active {
+            background: #fff;
+            color: #764ba2;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .zoom-controls button {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e0;
+            background: #fff;
+            color: var(--text-main);
+            margin-left: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .zoom-controls button:hover {
+            background: #e2e8f0;
+            color: #000;
+        }
+
+        /* --- Metrics & Badges --- */
+        h3 {
+            margin-top: 0;
+            color: var(--text-main);
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            align-items: center;
+            border-bottom: 1px solid #edf2f7;
+            padding-bottom: 10px;
+        }
+
+        .badge {
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: white;
+            background: var(--text-light);
+        }
+
+        .badge-plane {
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .badge-tumor {
+            background: var(--primary-gradient);
+        }
+
+        .progress-bg {
+            flex-grow: 1;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin: 0 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success-color);
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+
+        /* --- Loader --- */
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 40px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(118, 75, 162, 0.2);
+            border-top: 5px solid #764ba2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .img-viewport {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 NeuroVision AI</h1>
+            <p>Deep Learning Tumor Analysis & Segmentation System</p>
+        </div>
+
+        <div class="card">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📤</div>
+                <h3 style="margin-bottom: 5px;">Upload MRI Scan</h3>
+                <p style="color: var(--text-light); margin-top: 0;">Drag & drop or click to browse (DICOM, MAT, PNG)</p>
+                <input type="file" id="fileInput" hidden accept="image/*,.dcm,.mat">
+            </div>
+
+            <div class="loader" id="loader">
+                <div class="spinner"></div>
+                <p style="font-weight: 600; color: #764ba2;">Processing Neural Data...</p>
+            </div>
+
+            <div class="results-grid" id="resultsArea">
+
+                <div class="image-col">
+                    <div class="controls-row">
+                        <div class="view-toggles">
+                            <button class="toggle-btn active" onclick="showOriginal()">Original</button>
+                            <button class="toggle-btn" onclick="showSegmented()" id="segBtn">Segmentation</button>
+                        </div>
+                        <div class="zoom-controls">
+                            <button onclick="rotateImage()" title="Rotate 90° Clockwise">↻</button>
+                            <button onclick="adjustZoom(-0.2)">−</button>
+                            <button onclick="resetZoom()">R</button>
+                            <button onclick="adjustZoom(0.2)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="img-viewport" id="imgViewport">
+                        <img id="mainImage" class="preview-img" src="" alt="MRI Scan">
+                    </div>
+
+                    <p style="font-size: 0.85rem; color: #676768; margin-top: 10px; text-align: center;">
+                        <span style="display:inline-block; margin-right: 15px;">🖱️ Wheel to Zoom</span>
+                        <span>✋ Drag to Pan</span>
+                    </p>
+                </div>
+
+                <div class="data-col">
+                    <div style="flex-grow: 1;">
+                        <h3 style="border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                            Diagnostic Report
+                        </h3>
+
+                        <div class="stat-row">
+                            <span style="font-weight: 600; color: var(--text-light);">Scan Plane</span>
+                            <span class="badge badge-plane" id="planeResult">---</span>
+                        </div>
+
+                        <div class="stat-row">
+                            <span style="font-weight: 600; color: var(--text-light);">Prediction</span>
+                            <span class="badge badge-tumor" id="classResult">---</span>
+                        </div>
+
+                        <h4 style="margin-top: 30px; margin-bottom: 15px; color: var(--text-main);">
+                            Confidence Metrics
+                        </h4>
+                        <div id="probContainer"></div>
+                    </div>
+
+                    <button id="downloadBtn" class="btn btn-download" style="display: none;"
+                        onclick="downloadSegmentation()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download Overlay
+                    </button>
+                </div>
+            </div>
+
+            <p id="errorMsg"
+                style="color: #e53e3e; text-align: center; margin-top: 20px; font-weight: 600; display: none;"></p>
+        </div>
+    </div>
+
+    <script>
+        let originalImgData = "";
+        let segmentedImgData = "";
+        let currentFile = null;
+        let currentFileName = "scan";
+        let currentRotation = 0;
+        let scale = 1;
+        let pannedX = 0;
+        let pannedY = 0;
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+
+        const fileInput = document.getElementById('fileInput');
+        const imgViewport = document.getElementById('imgViewport');
+        const mainImage = document.getElementById('mainImage');
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            currentFile = file;
+            currentRotation = 0;
+            currentFileName = file.name.replace(/\.[^/.]+$/, "");
+            analyzeImage();
+        });
+
+        function rotateImage() {
+            if (!currentFile) return;
+            currentRotation -= 90;
+            analyzeImage();
+        }
+
+        async function analyzeImage() {
+            if (!currentFile) return;
+
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('errorMsg').style.display = 'none';
+
+            resetZoom();
+
+            const formData = new FormData();
+            formData.append('file', currentFile);
+            formData.append('rotation', currentRotation);
+
+            try {
+                const response = await fetch('/predict', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (data.error) throw new Error(data.error);
+
+                originalImgData = "data:image/png;base64," + data.original_image;
+                segmentedImgData = data.segmentation_image ? "data:image/png;base64," + data.segmentation_image : null;
+
+                document.getElementById('planeResult').innerText = data.planar_class.toUpperCase();
+                document.getElementById('classResult').innerText = data.tumor_class;
+
+                const probContainer = document.getElementById('probContainer');
+                probContainer.innerHTML = '';
+
+                // Add a little color logic for probs
+                const sorted = Object.entries(data.tumor_probs).sort((a, b) => b[1] - a[1]);
+
+                for (const [cls, prob] of sorted) {
+                    const pct = (prob * 100).toFixed(1);
+                    // Highlight top prob
+                    const isTop = pct > 50;
+                    const barColor = isTop ? 'var(--success-color)' : '#cbd5e0';
+                    const textColor = isTop ? 'var(--text-main)' : 'var(--text-light)';
+                    const fontWeight = isTop ? 'bold' : 'normal';
+
+                    probContainer.innerHTML += `
+                        <div style="margin-bottom: 12px;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.9rem; color: ${textColor}; font-weight: ${fontWeight}; margin-bottom: 5px;">
+                                <span>${cls}</span>
+                                <span>${pct}%</span>
+                            </div>
+                            <div class="progress-bg">
+                                <div class="progress-fill" style="width: ${pct}%; background: ${barColor}"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                showOriginal();
+
+                const segBtn = document.getElementById('segBtn');
+                const downloadBtn = document.getElementById('downloadBtn');
+
+                if (!segmentedImgData) {
+                    segBtn.disabled = true;
+                    segBtn.style.opacity = 0.5;
+                    segBtn.innerText = "No Seg. Mask";
+                    downloadBtn.style.display = 'none';
+                } else {
+                    segBtn.disabled = false;
+                    segBtn.style.opacity = 1;
+                    segBtn.innerText = "Segmentation";
+                    downloadBtn.style.display = 'flex';
+                }
+
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('resultsArea').style.display = 'grid';
+
+            } catch (err) {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('errorMsg').innerText = err.message;
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        }
+
+        function downloadSegmentation() {
+            if (!segmentedImgData) return;
+            const link = document.createElement('a');
+            link.href = segmentedImgData;
+            link.download = `${currentFileName}_segmentation.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function updateTransform() {
+            mainImage.style.transform = `translate(${pannedX}px, ${pannedY}px) scale(${scale})`;
+        }
+
+        function adjustZoom(delta) {
+            scale += delta;
+            if (scale < 1) scale = 1;
+            if (scale > 5) scale = 5;
+            updateTransform();
+        }
+
+        function resetZoom() {
+            scale = 1;
+            pannedX = 0;
+            pannedY = 0;
+            updateTransform();
+        }
+
+        imgViewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY * -0.001;
+            const newScale = Math.min(Math.max(1, scale + delta), 5);
+            scale = newScale;
+            updateTransform();
+        });
+
+        imgViewport.addEventListener('mousedown', (e) => {
+            if (scale > 1) {
+                isDragging = true;
+                startX = e.clientX - pannedX;
+                startY = e.clientY - pannedY;
+                imgViewport.style.cursor = 'grabbing';
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            imgViewport.style.cursor = 'grab';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            pannedX = e.clientX - startX;
+            pannedY = e.clientY - startY;
+            updateTransform();
+        });
+
+        function showOriginal() {
+            document.getElementById('mainImage').src = originalImgData;
+            toggleBtns(0);
+        }
+
+        function showSegmented() {
+            if (segmentedImgData) {
+                document.getElementById('mainImage').src = segmentedImgData;
+                toggleBtns(1);
+            }
+        }
+
+        function toggleBtns(idx) {
+            const btns = document.querySelectorAll('.toggle-btn');
+            btns.forEach((b, i) => {
+                if (i === idx) b.classList.add('active');
+                else b.classList.remove('active');
+            });
+        }
+    </script>
+</body>
+
+</html>

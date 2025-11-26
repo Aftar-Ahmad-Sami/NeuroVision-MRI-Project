@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Brain Tumor Analysis</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #11998e;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .upload-area {
+            border: 3px dashed #cbd5e0;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: #f0f2ff;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 15px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Grid Layout for Results */
+        .results-grid {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .image-col {
+            text-align: center;
+        }
+
+        .data-col {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        /* --- Zoom Container & Controls --- */
+        .img-viewport {
+            width: 100%;
+            height: 450px;
+            /* Fixed height for consistent zoom experience */
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            /* Clips the zoomed image */
+            position: relative;
+            margin-bottom: 10px;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .img-viewport:active {
+            cursor: grabbing;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 100%;
+            transition: transform 0.1s ease-out;
+            /* Smooth zoom */
+            transform-origin: center center;
+            pointer-events: none;
+            /* Let clicks pass through to container */
+        }
+
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .zoom-controls button {
+            background: white;
+            border: 1px solid #ccc;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: #333;
+            font-weight: bold;
+            margin-left: 5px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .zoom-controls button:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .badge {
+            background: var(--primary);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .badge-plane {
+            background: #ff9f43;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .progress-bg {
+            flex-grow: 1;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            margin: 0 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            border-radius: 5px;
+            transition: width 1s ease;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .toggle-btn {
+            background: #e2e8f0;
+            color: #333;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .toggle-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 NeuroVision AI</h1>
+            <p>Tumor Classification & Segmentation System</p>
+        </div>
+
+        <div class="card">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <div style="font-size: 3rem;">📤</div>
+                <h3>Click to Upload MRI Scan</h3>
+                <p>Supports PNG, JPG, JPEG</p>
+                <input type="file" id="fileInput" hidden accept="image/*">
+            </div>
+
+            <div class="loader" id="loader">
+                <div class="spinner"></div>
+                <p>Analyzing morphology and segmentation...</p>
+            </div>
+
+            <div class="results-grid" id="resultsArea">
+                <div class="image-col">
+                    <h3>MRI Visualization</h3>
+
+                    <div class="controls-row">
+                        <div class="view-toggles">
+                            <button class="toggle-btn active" onclick="showOriginal()">Original</button>
+                            <button class="toggle-btn" onclick="showSegmented()" id="segBtn">Segmentation
+                                Overlay</button>
+                        </div>
+                        <div class="zoom-controls">
+                            <!-- Rotation Button -->
+                            <button onclick="rotateImage()" title="Rotate 90° Clockwise"
+                                style="margin-right: 15px;">↻</button>
+
+                            <!-- Zoom Controls -->
+                            <button onclick="adjustZoom(-0.2)" title="Zoom Out">-</button>
+                            <button onclick="resetZoom()" title="Reset">R</button>
+                            <button onclick="adjustZoom(0.2)" title="Zoom In">+</button>
+                        </div>
+                    </div>
+
+                    <div class="img-viewport" id="imgViewport">
+                        <img id="mainImage" class="preview-img" src="" alt="MRI Scan">
+                    </div>
+
+                    <p style="font-size: 0.9rem; color: #666;" id="imgCaption">
+                        Original MRI Scan. Use mouse wheel to zoom, drag to pan.
+                    </p>
+                </div>
+
+                <div class="data-col">
+                    <h3>Diagnostic Report</h3>
+
+                    <div class="stat-row">
+                        <strong>Detected Plane:</strong>
+                        <span class="badge badge-plane" id="planeResult">Scanning...</span>
+                    </div>
+
+                    <div class="stat-row">
+                        <strong>Tumor Classification:</strong>
+                        <span class="badge" id="classResult" style="background: var(--success)">Scanning...</span>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
+
+                    <h4>Confidence Metrics</h4>
+                    <div id="probContainer"></div>
+                </div>
+            </div>
+
+            <p id="errorMsg" style="color: red; text-align: center; margin-top: 20px; display: none;"></p>
+        </div>
+    </div>
+
+    <script>
+        let originalImgData = "";
+        let segmentedImgData = "";
+
+        // App State
+        let currentFile = null;
+        let currentRotation = 0; // Degrees (negative for clockwise in standard math, but we'll treat -90 as clockwise for PIL)
+
+        // Zoom & Pan State
+        let scale = 1;
+        let pannedX = 0;
+        let pannedY = 0;
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+
+        const fileInput = document.getElementById('fileInput');
+        const imgViewport = document.getElementById('imgViewport');
+        const mainImage = document.getElementById('mainImage');
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Set global file and reset rotation
+            currentFile = file;
+            currentRotation = 0;
+
+            // Analyze
+            analyzeImage();
+        });
+
+        function rotateImage() {
+            if (!currentFile) return;
+            // PIL rotate uses counter-clockwise by default. 
+            // -90 is 90 degrees clockwise.
+            currentRotation -= 90;
+            analyzeImage();
+        }
+
+        async function analyzeImage() {
+            if (!currentFile) return;
+
+            // Reset UI
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('errorMsg').style.display = 'none';
+
+            // Reset zoom on new analysis to fit the potentially rotated image
+            resetZoom();
+
+            const formData = new FormData();
+            formData.append('file', currentFile);
+            formData.append('rotation', currentRotation);
+
+            try {
+                const response = await fetch('/predict', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (data.error) throw new Error(data.error);
+
+                // Store images
+                originalImgData = "data:image/png;base64," + data.original_image;
+                segmentedImgData = data.segmentation_image ? "data:image/png;base64," + data.segmentation_image : null;
+
+                // Update Data
+                document.getElementById('planeResult').innerText = data.planar_class.toUpperCase();
+                document.getElementById('classResult').innerText = data.tumor_class;
+
+                // Update Probabilities
+                const probContainer = document.getElementById('probContainer');
+                probContainer.innerHTML = '';
+
+                for (const [cls, prob] of Object.entries(data.tumor_probs)) {
+                    const pct = (prob * 100).toFixed(1);
+                    probContainer.innerHTML += `
+                        <div style="margin-bottom: 10px;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
+                                <span>${cls}</span>
+                                <span>${pct}%</span>
+                            </div>
+                            <div class="progress-bg">
+                                <div class="progress-fill" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Show Results
+                showOriginal();
+
+                // Disable segmentation button if no tumor found or no mask generated
+                const segBtn = document.getElementById('segBtn');
+                if (!segmentedImgData) {
+                    segBtn.disabled = true;
+                    segBtn.style.opacity = 0.5;
+                    segBtn.innerText = "No Tumor / Segmentation Failed";
+                } else {
+                    segBtn.disabled = false;
+                    segBtn.style.opacity = 1;
+                    segBtn.innerText = "Segmentation Overlay";
+                }
+
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('resultsArea').style.display = 'grid';
+
+            } catch (err) {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('errorMsg').innerText = err.message;
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        }
+
+        // --- Zoom & Pan Logic ---
+
+        function updateTransform() {
+            // Apply scale and translation
+            mainImage.style.transform = `translate(${pannedX}px, ${pannedY}px) scale(${scale})`;
+        }
+
+        function adjustZoom(delta) {
+            scale += delta;
+            if (scale < 1) scale = 1; // Min zoom
+            if (scale > 5) scale = 5; // Max zoom
+            updateTransform();
+        }
+
+        function resetZoom() {
+            scale = 1;
+            pannedX = 0;
+            pannedY = 0;
+            updateTransform();
+        }
+
+        // Wheel Zoom
+        imgViewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY * -0.001;
+            const newScale = Math.min(Math.max(1, scale + delta), 5);
+            scale = newScale;
+            updateTransform();
+        });
+
+        // Drag to Pan
+        imgViewport.addEventListener('mousedown', (e) => {
+            if (scale > 1) { // Only allow drag if zoomed in
+                isDragging = true;
+                startX = e.clientX - pannedX;
+                startY = e.clientY - pannedY;
+                imgViewport.style.cursor = 'grabbing';
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            imgViewport.style.cursor = 'grab';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            pannedX = e.clientX - startX;
+            pannedY = e.clientY - startY;
+            updateTransform();
+        });
+
+
+        function showOriginal() {
+            document.getElementById('mainImage').src = originalImgData;
+            document.getElementById('imgCaption').innerText = "Original MRI Scan. Use mouse wheel to zoom.";
+            toggleBtns(0);
+        }
+
+        function showSegmented() {
+            if (segmentedImgData) {
+                document.getElementById('mainImage').src = segmentedImgData;
+                document.getElementById('imgCaption').innerText = "AI Segmentation Mask (Red Area = Tumor)";
+                toggleBtns(1);
+            }
+        }
+
+        function toggleBtns(idx) {
+            const btns = document.querySelectorAll('.toggle-btn');
+            btns.forEach((b, i) => {
+                if (i === idx) b.classList.add('active');
+                else b.classList.remove('active');
+            });
+        }
+    </script>
+</body>
+
+</html>

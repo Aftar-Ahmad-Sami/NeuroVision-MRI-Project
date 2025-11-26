@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Brain Tumor Analysis</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #11998e;
+            --ai-accent: #ff0080;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .upload-area {
+            border: 3px dashed #cbd5e0;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: #f0f2ff;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 15px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-ai {
+            background: var(--ai-accent);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        .btn-ai:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Grid Layout for Results */
+        .results-grid {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .image-col {
+            text-align: center;
+        }
+
+        .data-col {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* --- Zoom Container & Controls --- */
+        .img-viewport {
+            width: 100%;
+            height: 450px;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 10px;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .img-viewport:active {
+            cursor: grabbing;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 100%;
+            transition: transform 0.1s ease-out;
+            transform-origin: center center;
+            pointer-events: none;
+        }
+
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .zoom-controls button {
+            background: white;
+            border: 1px solid #ccc;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: #333;
+            font-weight: bold;
+            margin-left: 5px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .zoom-controls button:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .badge {
+            background: var(--primary);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .badge-plane {
+            background: #ff9f43;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            align-items: center;
+        }
+
+        .progress-bg {
+            flex-grow: 1;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            margin: 0 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            border-radius: 5px;
+            transition: width 1s ease;
+        }
+
+        /* AI Analysis Box Styles */
+        .ai-analysis-box {
+            background: white;
+            border: 2px solid var(--ai-accent);
+            border-radius: 10px;
+            padding: 15px;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .ai-title {
+            color: var(--ai-accent);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .ai-content {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #444;
+            white-space: pre-wrap;
+            /* Keeps markdown formatting roughly intact */
+            display: none;
+            /* Hidden by default */
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .ai-timer {
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .toggle-btn {
+            background: #e2e8f0;
+            color: #333;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .toggle-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 NeuroVision AI</h1>
+            <p>Tumor Classification & Segmentation System + AI Analysis</p>
+        </div>
+
+        <div class="card">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <div style="font-size: 3rem;">📤</div>
+                <h3>Click to Upload MRI Scan</h3>
+                <p>Supports PNG, JPG, JPEG</p>
+                <input type="file" id="fileInput" hidden accept="image/*">
+            </div>
+
+            <div class="loader" id="loader">
+                <div class="spinner"></div>
+                <p>Processing Image...</p>
+            </div>
+
+            <div class="results-grid" id="resultsArea">
+                <div class="image-col">
+                    <h3>MRI Visualization</h3>
+
+                    <div class="controls-row">
+                        <div class="view-toggles">
+                            <button class="toggle-btn active" onclick="showOriginal()">Original</button>
+                            <button class="toggle-btn" onclick="showSegmented()" id="segBtn">Segmentation
+                                Overlay</button>
+                        </div>
+                        <div class="zoom-controls">
+                            <button onclick="rotateImage()" title="Rotate 90° Clockwise"
+                                style="margin-right: 15px;">↻</button>
+                            <button onclick="adjustZoom(-0.2)" title="Zoom Out">-</button>
+                            <button onclick="resetZoom()" title="Reset">R</button>
+                            <button onclick="adjustZoom(0.2)" title="Zoom In">+</button>
+                        </div>
+                    </div>
+
+                    <div class="img-viewport" id="imgViewport">
+                        <img id="mainImage" class="preview-img" src="" alt="MRI Scan">
+                    </div>
+
+                    <p style="font-size: 0.9rem; color: #666;" id="imgCaption">
+                        Original MRI Scan. Use mouse wheel to zoom.
+                    </p>
+                </div>
+
+                <div class="data-col">
+                    <div>
+                        <h3>Diagnostic Report</h3>
+
+                        <div class="stat-row">
+                            <strong>Detected Plane:</strong>
+                            <span class="badge badge-plane" id="planeResult">Scanning...</span>
+                        </div>
+
+                        <div class="stat-row">
+                            <strong>Tumor Classification:</strong>
+                            <span class="badge" id="classResult" style="background: var(--success)">Scanning...</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4>Confidence Metrics</h4>
+                        <div id="probContainer"></div>
+                    </div>
+
+                    <div class="ai-analysis-box">
+                        <div class="ai-title">
+                            <span>🤖</span> AI Medical Analysis (Gemma)
+                        </div>
+
+                        <div id="aiControlPanel">
+                            <p style="font-size: 0.9rem; margin-bottom: 10px;">Deep analysis via LLM (Markdown Report).
+                            </p>
+                            <button class="btn-ai" onclick="generateReport()" id="genReportBtn">Generate AI
+                                Report</button>
+                        </div>
+
+                        <div id="aiTimer" class="ai-timer">
+                            <div class="spinner"
+                                style="width:20px; height:20px; border-width:2px; display: inline-block; vertical-align: middle;">
+                            </div>
+                            <span style="margin-left: 10px;">Processing... <span id="timerCount">0.0s</span></span>
+                        </div>
+
+                        <div class="ai-content" id="aiReportContent">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p id="errorMsg" style="color: red; text-align: center; margin-top: 20px; display: none;"></p>
+        </div>
+    </div>
+
+    <script>
+        let originalImgData = "";
+        let segmentedImgData = "";
+
+        // App State
+        let currentFile = null;
+        let currentRotation = 0;
+        let lastResult = null; // Store basic classification results for the report
+        let timerInterval = null;
+
+        // Zoom & Pan State
+        let scale = 1;
+        let pannedX = 0;
+        let pannedY = 0;
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+
+        const fileInput = document.getElementById('fileInput');
+        const imgViewport = document.getElementById('imgViewport');
+        const mainImage = document.getElementById('mainImage');
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            currentFile = file;
+            currentRotation = 0;
+            analyzeImage();
+        });
+
+        function rotateImage() {
+            if (!currentFile) return;
+            currentRotation -= 90;
+            analyzeImage();
+        }
+
+        async function analyzeImage() {
+            if (!currentFile) return;
+
+            // Reset UI
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('errorMsg').style.display = 'none';
+
+            // Reset AI Box
+            document.getElementById('aiControlPanel').style.display = 'block';
+            document.getElementById('aiTimer').style.display = 'none';
+            document.getElementById('aiReportContent').style.display = 'none';
+            document.getElementById('genReportBtn').disabled = false;
+
+            resetZoom();
+
+            const formData = new FormData();
+            formData.append('file', currentFile);
+            formData.append('rotation', currentRotation);
+
+            try {
+                const response = await fetch('/predict', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (data.error) throw new Error(data.error);
+
+                lastResult = data; // Store data for report generation
+
+                originalImgData = "data:image/png;base64," + data.original_image;
+                segmentedImgData = data.segmentation_image ? "data:image/png;base64," + data.segmentation_image : null;
+
+                document.getElementById('planeResult').innerText = data.planar_class.toUpperCase();
+                document.getElementById('classResult').innerText = data.tumor_class;
+
+                const probContainer = document.getElementById('probContainer');
+                probContainer.innerHTML = '';
+
+                for (const [cls, prob] of Object.entries(data.tumor_probs)) {
+                    const pct = (prob * 100).toFixed(1);
+                    probContainer.innerHTML += `
+                        <div style="margin-bottom: 10px;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
+                                <span>${cls}</span>
+                                <span>${pct}%</span>
+                            </div>
+                            <div class="progress-bg">
+                                <div class="progress-fill" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                showOriginal();
+
+                const segBtn = document.getElementById('segBtn');
+                if (!segmentedImgData) {
+                    segBtn.disabled = true;
+                    segBtn.style.opacity = 0.5;
+                    segBtn.innerText = "No Tumor / Segmentation Failed";
+                } else {
+                    segBtn.disabled = false;
+                    segBtn.style.opacity = 1;
+                    segBtn.innerText = "Segmentation Overlay";
+                }
+
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('resultsArea').style.display = 'grid';
+
+            } catch (err) {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('errorMsg').innerText = err.message;
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        }
+
+        // --- Generate AI Report ---
+        async function generateReport() {
+            if (!currentFile || !lastResult) return;
+
+            const btn = document.getElementById('genReportBtn');
+            const timerDiv = document.getElementById('aiTimer');
+            const timerCount = document.getElementById('timerCount');
+            const controlPanel = document.getElementById('aiControlPanel');
+            const contentDiv = document.getElementById('aiReportContent');
+
+            // UI Setup
+            controlPanel.style.display = 'none';
+            timerDiv.style.display = 'block';
+            contentDiv.style.display = 'none';
+            contentDiv.innerText = '';
+
+            // Start Timer
+            let startTime = Date.now();
+            timerInterval = setInterval(() => {
+                let elapsed = (Date.now() - startTime) / 1000;
+                timerCount.innerText = elapsed.toFixed(1) + "s";
+            }, 100);
+
+            const formData = new FormData();
+            formData.append('file', currentFile);
+            formData.append('rotation', currentRotation);
+            formData.append('tumor_class', lastResult.tumor_class);
+            formData.append('plane', lastResult.planar_class);
+            formData.append('confidence', lastResult.tumor_conf);
+
+            try {
+                const response = await fetch('/generate_report', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                clearInterval(timerInterval);
+                timerDiv.style.display = 'none';
+
+                if (data.error) {
+                    contentDiv.innerText = "Error generating report: " + data.error;
+                } else {
+                    contentDiv.innerText = data.report; // Displays MD as text (preserved whitespace)
+                }
+                contentDiv.style.display = 'block';
+
+            } catch (err) {
+                clearInterval(timerInterval);
+                timerDiv.style.display = 'none';
+                contentDiv.innerText = "Network Error: " + err.message;
+                contentDiv.style.display = 'block';
+                controlPanel.style.display = 'block'; // Allow retry
+            }
+        }
+
+        // --- Zoom & Pan Logic ---
+
+        function updateTransform() {
+            mainImage.style.transform = `translate(${pannedX}px, ${pannedY}px) scale(${scale})`;
+        }
+
+        function adjustZoom(delta) {
+            scale += delta;
+            if (scale < 1) scale = 1;
+            if (scale > 5) scale = 5;
+            updateTransform();
+        }
+
+        function resetZoom() {
+            scale = 1;
+            pannedX = 0;
+            pannedY = 0;
+            updateTransform();
+        }
+
+        imgViewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY * -0.001;
+            const newScale = Math.min(Math.max(1, scale + delta), 5);
+            scale = newScale;
+            updateTransform();
+        });
+
+        imgViewport.addEventListener('mousedown', (e) => {
+            if (scale > 1) {
+                isDragging = true;
+                startX = e.clientX - pannedX;
+                startY = e.clientY - pannedY;
+                imgViewport.style.cursor = 'grabbing';
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            imgViewport.style.cursor = 'grab';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            pannedX = e.clientX - startX;
+            pannedY = e.clientY - startY;
+            updateTransform();
+        });
+
+
+        function showOriginal() {
+            document.getElementById('mainImage').src = originalImgData;
+            document.getElementById('imgCaption').innerText = "Original MRI Scan. Use mouse wheel to zoom.";
+            toggleBtns(0);
+        }
+
+        function showSegmented() {
+            if (segmentedImgData) {
+                document.getElementById('mainImage').src = segmentedImgData;
+                document.getElementById('imgCaption').innerText = "AI Segmentation Mask (Red Area = Tumor)";
+                toggleBtns(1);
+            }
+        }
+
+        function toggleBtns(idx) {
+            const btns = document.querySelectorAll('.toggle-btn');
+            btns.forEach((b, i) => {
+                if (i === idx) b.classList.add('active');
+                else b.classList.remove('active');
+            });
+        }
+    </script>
+</body>
+
+</html>
