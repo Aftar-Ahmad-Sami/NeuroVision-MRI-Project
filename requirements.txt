@@ -9,3 +9,4 @@ pydicom
 scipy
 h5py
 matplotlib
+gunicorn>=21.2.0
